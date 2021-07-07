@@ -1,7 +1,6 @@
 package uuidnil
 
 import (
-	"errors"
 	"log"
 	"reflect"
 
@@ -167,50 +166,8 @@ func proxyUUID(typ reflect.Type, opts Option) (reflect.Type, assignFunc) {
 			log.Printf("[TRACE] assign: %s => %s\n", from.Type(), to.Type())
 		}
 
-		// *UUID <=> *string.
-		if from.Kind() == reflect.Ptr {
-			if from.IsNil() {
-				to.Set(reflect.Zero(to.Type()))
-				return nil
-			}
-
-			if from.Type().Elem().Kind() != reflect.String {
-				id, ok := from.Interface().(*uuid.UUID)
-				if !ok {
-					return errors.New("uuidnil: internal inconsistency")
-				}
-
-				s := id.String()
-				to.Set(reflect.ValueOf(&s))
-				return nil
-			}
-
-			str := from.Elem().String()
-			if str == "" && opts.empty() {
-				to.Set(reflect.New(to.Elem().Type()))
-				return nil
-			}
-
-			id, err := uuid.Parse(str)
-			if err != nil && opts.invalid() {
-				to.Set(reflect.New(to.Elem().Type()))
-				return nil
-			}
-			if err != nil {
-				return err
-			}
-
-			to.Set(reflect.ValueOf(&id))
-			return nil
-		}
-
-		// UUID <=> string.
 		if from.Type().Kind() != reflect.String {
-			id, ok := from.Interface().(uuid.UUID)
-			if !ok {
-				return errors.New("uuidnil: internal inconsistency")
-			}
-
+			id := from.Interface().(uuid.UUID)
 			to.Set(reflect.ValueOf(id.String()))
 			return nil
 		}
